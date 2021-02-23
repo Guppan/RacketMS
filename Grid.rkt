@@ -3,6 +3,8 @@
 (require "Node.rkt"
          racket/class)
 
+(provide grid%)
+
 (define grid%
   (class object%
     (field [size (cons 0 0)]
@@ -27,8 +29,8 @@
       (set! size size-arg)
       (set! grid (build-vector
                   (* (car size) (cdr size))
-                  (lambda (unused)
-                    (new node%)))))
+                  (lambda (idx)
+                    (make-object node% (to-pos idx))))))
 
     (define/public (set-mines! mine-arg)
       (set! mines mine-arg))
@@ -49,7 +51,7 @@
              [flag? (send node get-flag)]
              [mine? (send node get-mine)])
         (unless (or visible? flag?)
-          (send node set-visible)
+          (send node set-visible!)
           (set! flipped (add1 flipped))
           (when mine?
             (set! lost #t)))))
@@ -62,7 +64,7 @@
         (unless (or visible? flag?)
           (let ([mine? (send node get-mine)]
                 [value (send node get-value)])
-            (send node set-visible)
+            (send node set-visible!)
             (set! flipped (add1 flipped))
             (cond
               (mine?
@@ -71,7 +73,15 @@
                (when (zero? value)
                  (for ([adjacent (adjacent-list pos)])
                    (flip-rec! adjacent)))))))))
-    
+
+    ;; Draw all nodes which have been flipped.
+    (define/public (draw-nodes dc)
+      (for ([i (in-range (* (car size) (cdr size)))])
+        (let* ([node (vector-ref grid i)]
+               [visible? (send node get-visible)]
+               [flag? (send node get-flag)])
+          (when (or visible? flag?)
+            (send node draw dc)))))
 
     ;; ---- Private methods ----
     (define/private (in-range? pos)
@@ -84,23 +94,27 @@
       (+ (* (cdr pos) (car size))
          (car pos)))
 
+    (define/private (to-pos index)
+      (cons (remainder index (car size))
+            (quotient index (car size))))
+
     (define/private (get-node pos)
       (vector-ref grid (to-index pos)))
     
     ;; Returns a list of positions adjacent to
     ;; a given position 'pos'.
-    (define/private (adjacent-list pos)
+    (define/public (adjacent-list pos)
       (let ([result (list)])
         (for ([y (in-range (- (cdr pos) 1)
-                           (+ (cdr pos) 2))]
-              [x (in-range (- (car pos) 1)
-                           (+ (car pos) 2))])
-          (let ([new-pos (cons x y)])
-            (when (and (in-range? new-pos)
-                       (not (equal? new-pos pos)))
-              (set! result (append result
-                                   (list new-pos))))))
-        result))
+                           (+ (cdr pos) 2))])
+          (for ([x (in-range (- (car pos) 1)
+                             (+ (car pos) 2))])
+            (let ([new-pos (cons x y)])
+              (when (and (in-range? new-pos)
+                         (not (equal? new-pos pos)))
+                (set! result (append result
+                                     (list new-pos)))))))
+          result))
 
     ;; Increment the value for each adjacent node
     ;; to the node at position 'pos'.

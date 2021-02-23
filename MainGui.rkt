@@ -34,13 +34,7 @@
                            "<= x <="
                            (number->string max))))
 
-    (define/private (on-play!)
-      (let ([width (get-value width-input)]
-            [height (get-value height-input)]
-            [mines (get-value height-input)]
-            [ai? (send ai-check get-value)])
-        (void)))
-
+    ;; Button callback with error checking.
     (define (button-procedure button control-event)
       (let ([width? (legal-size? width-input 3 30)]
             [height? (legal-size? height-input 3 16)])
@@ -59,7 +53,11 @@
                ([not mine?]
                 (send-error! mine-input 1 (* width height)))
                (else
-                (on-play!))))))))
+                (let ([mines (get-value mine-input)]
+                      [ai? (send ai-check get-value)])
+                  (send main-frame show #f)
+                  (send game init-game!
+                        width height mines ai?)))))))))
 
     ;; ---- Components for gui ----
     (define main-panel
@@ -96,6 +94,7 @@
            [parent main-panel]
            [callback button-procedure]))
 
+    (send main-frame center 'both)
     (send main-frame show #t)
 
     (super-new)))

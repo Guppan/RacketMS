@@ -1,6 +1,7 @@
 #lang racket/gui
 
-(require "Utilities.rkt")
+(require "Grid.rkt"
+         "Utilities.rkt")
 
 (provide game-gui%)
 
@@ -13,34 +14,51 @@
                       [min-height 1]
                       [stretchable-width #f]
                       [stretchable-height #f])]
-     [size (cons 0 0)]
-     [background (make-object bitmap% 1 1)])
+     [grid (new grid%)]
+     [background (make-object bitmap% 1 1)]
+     [run-game? #f])
 
-    ;; Sets the frames size and generates
-    ;; the background.
-    (define/public (init-size! width height)
-      (send game-frame min-width (* tex-size
-                                    width))
-      (send game-frame min-height (* tex-size
-                                     height))
-      (set! size (cons width height))
-      (generate-background!))
-
+    ;; Initialize the game and run it.
+    (define/public (init-game! width height mines ai?)
+      (init-size! width height)
+      (set-mines! mines)
+      (send game-frame center 'both)
+      (send game-frame show #t)
+      (start-game!))
+    
     ;; ---- Private methods/definitions ----
-    (define/private (generate-background!)
+    (define/private (generate-background! width height)
       (let* ([result (make-object bitmap%
-                       (* tex-size (car size))
-                       (* tex-size (cdr size)))]
+                       (* tex-size width)
+                       (* tex-size height))]
              [dc (new bitmap-dc%
                       [bitmap result])]
              [pos (tex-section 'hidden)])
-        (for ([y (in-range (cdr size))])
-          (for ([x (in-range (car size))])
+        (for ([y (in-range height)])
+          (for ([x (in-range width)])
             (send dc draw-bitmap-section tex-bitmap
                   (* x tex-size) (* y tex-size)
                   (car pos) (cdr pos)
                   tex-size tex-size)))
         (set! background result)))
+
+    ;; Sets the size of the frame and the game.
+    ;; Also generates the background.
+    (define/private (init-size! width height)
+      (send game-frame min-width (* tex-size
+                                    width))
+      (send game-frame min-height (* tex-size
+                                     height))
+      (send grid set-size! (cons width height))
+      (generate-background! width height))
+
+    ;; Set and generate mines on the grid.
+    (define/private (set-mines! mines)
+      (send grid set-mines! mines)
+      (send grid generate-mines!))
+
+    (define/private (start-game!)
+      (send game-timer start 16 #f))
 
     ;; ---- Components for gui ----
     (define game-panel
@@ -62,13 +80,14 @@
                          tex-size))])
         (cond
           ([send mouse-event button-up? 'left]
-           (void))
+           (send grid flip-rec! (cons x y)))
           ([send mouse-event button-up? 'right]
-           (void)))))
+           (send grid toggle-flag! (cons x y))))))
 
     ;; Paints the canvas each time it's called.
     (define (paint-procedure canvas dc)
-      (send dc draw-bitmap background 0 0))
+      (send dc draw-bitmap background 0 0)
+      (send grid draw-nodes dc))
 
     (define game-canvas
       (new input-canvas%
@@ -78,7 +97,10 @@
 
     ;; ---- Timers -----
     (define (update-game!)
-      (send game-canvas refresh))
+      (send game-canvas refresh)
+      (when (or (send grid lost?)
+                (send grid win?))
+        (send game-timer stop)))
 
     (define game-timer
       (new timer%
