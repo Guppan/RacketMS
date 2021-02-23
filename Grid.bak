@@ -1,0 +1,7 @@
+#lang racket/base
+
+
+(define grid%
+  (class object%
+    (field [size (cons 0 0)]
+           [grid (vector)])
