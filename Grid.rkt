@@ -13,7 +13,54 @@
            [lost #f]
            [flipped 0])
 
+    (define/public (debug-grid)
+      (set-size! (cons 5 5))
+      (set-mines! 4)
+      (for ([p (list (cons 3 0) (cons 3 1)
+                     (cons 4 1) (cons 3 4))])
+        (send (get-node p) set-mine!)
+        (increment-adjacent! p)))
+
+    (define/public (print visible?)
+      (for ([y (in-range (cdr size))])
+        (for ([x (in-range (car size))])
+          (let* ([pos (cons x y)]
+                 [node (get-node pos)]
+                 [is-visible? (send node get-visible)]
+                 [flag? (send node get-flag)]
+                 [mine? (send node get-mine)]
+                 [value (send node get-value)]
+                 [val "."])
+            (cond
+              (visible?
+               (cond
+                 (mine?
+                  (set! val "x"))
+                 (else
+                  (set! val value))))
+              (else
+               (cond
+                 (is-visible?
+                  (cond
+                    (mine?
+                     (set! val "x"))
+                    (else
+                     (set! val value))))
+                 (else
+                  (cond
+                    (flag?
+                     (set! val "F"))
+                    (else
+                     (set! val ".")))))))
+            (display val)
+            (display " ")))
+        (displayln "")))
+            
+    
     ;; ---- Getters ----
+    (define/public (get-size)
+      size)
+    
     (define/public (lost?)
       lost)
 

@@ -1,7 +1,8 @@
 #lang racket/gui
 
 (require "Grid.rkt"
-         "Utilities.rkt")
+         "Utilities.rkt"
+         "Solver.rkt")
 
 (provide game-gui%)
 
@@ -15,13 +16,18 @@
                       [stretchable-width #f]
                       [stretchable-height #f])]
      [grid (new grid%)]
+     [solver (make-object solver% grid)]
      [background (make-object bitmap% 1 1)]
+     [ai-active? #f]
      [run-game? #f])
 
     ;; Initialize the game and run it.
     (define/public (init-game! width height mines ai?)
       (init-size! width height)
       (set-mines! mines)
+      (when ai?
+        (send solver set-size! (cons width height))
+        (set! ai-active? #t))
       (send game-frame center 'both)
       (send game-frame show #t)
       (start-game!))
@@ -98,6 +104,8 @@
     ;; ---- Timers -----
     (define (update-game!)
       (send game-canvas refresh)
+      (when ai-active?
+        (send solver tick-solver!))
       (when (or (send grid lost?)
                 (send grid win?))
         (send game-timer stop)))
