@@ -29,22 +29,16 @@
       back-set)
 
     ;; ---- Public methods ----
-    (define/public (contains? pos)
-      (or (set-member? front-set pos)
-          (set-member? back-set pos)))
-
     (define/public (move-back!)
       (set-union! back-set front-set)
       (set-clear! front-set))
 
-    (define/public (add-set! set-arg move-back?)
-      (when move-back?
-        (set-union! back-set front-set))
+    (define/public (add-set! set-arg)
+      (set-union! back-set front-set)
       (set! front-set set-arg))
 
-    (define/public (add-pos! pos move-back?)
-      (when move-back?
-        (move-back!))
+    (define/public (add-pos! pos)
+      (move-back!)
       (set-add! front-set pos))
     
     (super-new)))

@@ -81,7 +81,7 @@
       (new text-field%
            [label "Mines "]
            [parent main-panel]
-           [init-value "40"]))
+           [init-value "99"]))
 
     (define ai-check
       (new check-box%

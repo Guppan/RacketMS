@@ -63,7 +63,7 @@
     ;; Marks a position as safe and updates knowledge.
     ;; Complexity : knowledge.size
     (define/private (mark-safe! pos)
-      (send known-safes add-pos! pos #t)
+      (send known-safes add-pos! pos)
       (for ([sentence (in-hash-values knowledge)])
         (send sentence mark-safe! pos))
       (send known-safes move-back!))
@@ -89,6 +89,15 @@
 
     ;; ---- Update-knowledge-loop! ----
 
+    ;; Flag all mines in known-mines front-set which
+    ;; haven't been flagged already.
+    ;; Complexity : known-mines.front-set.size
+    (define/private (flag-mines!)
+      (let ([back-set (send known-mines get-back-set)])
+        (for ([pos (in-set (send known-mines get-front-set))]
+              #:unless (set-member? back-set pos))
+          (send grid toggle-flag! pos))))
+
     ;; Collects all sets from knowledge with 'get-method'
     ;; and adds the collection to 'known-set'.
     ;; Returns #t if new sets were collected, else #f.
@@ -98,15 +107,18 @@
         (for ([sentence (in-hash-values knowledge)]
               #:unless (send sentence empty?))
           (set-union! new-set (dynamic-send sentence get-method)))
-        (send known-set add-set! new-set #t)
+        (send known-set add-set! new-set)
         (not (set-empty? new-set))))
 
     (define/private (update-known-safes!)
       (update-known-set! known-safes 'get-safes))
 
     (define/private (update-known-mines!)
-      (update-known-set! known-mines 'get-mines))
-
+      (let ([return-value (update-known-set! known-mines 'get-mines)])
+        (when return-value
+          (flag-mines!))
+        return-value))
+    
     ;; Marks new safes and mines in knowledge.
     ;; Complexity : knowledge.size * (known-safes.front-set.size +
     ;;                                known-mines.front-set.size)
