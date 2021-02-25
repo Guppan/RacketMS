@@ -21,7 +21,8 @@
         (send (get-node p) set-mine!)
         (increment-adjacent! p)))
 
-    (define/public (print visible?)
+    (define/public (print visible? port)
+      (displayln "+++++++++++++++++++++++++++++++++++++++" port)
       (for ([y (in-range (cdr size))])
         (for ([x (in-range (car size))])
           (let* ([pos (cons x y)]
@@ -52,9 +53,9 @@
                      (set! val "F"))
                     (else
                      (set! val ".")))))))
-            (display val)
-            (display " ")))
-        (displayln "")))
+            (display val port)
+            (display " " port)))
+        (displayln "" port)))
             
     
     ;; ---- Getters ----

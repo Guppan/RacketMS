@@ -69,19 +69,19 @@
       (new text-field%
            [label "Width "]
            [parent main-panel]
-           [init-value "9"]))
+           [init-value "30"]))
 
     (define height-input
       (new text-field%
            [label "Height"]
            [parent main-panel]
-           [init-value "9"]))
+           [init-value "16"]))
 
     (define mine-input
       (new text-field%
            [label "Mines "]
            [parent main-panel]
-           [init-value "10"]))
+           [init-value "40"]))
 
     (define ai-check
       (new check-box%

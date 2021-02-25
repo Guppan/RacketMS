@@ -10,6 +10,18 @@
     (field [front-set (mutable-set)]
            [back-set (mutable-set)])
 
+    (define/public (print port)
+      (display "Front : " port)
+      (for ([f (in-set front-set)])
+        (display f port)
+        (display " " port))
+      (displayln "" port)
+      (display "Back : " port)
+      (for ([b (in-set back-set)])
+        (display b port)
+        (display " " port))
+      (displayln "" port))
+
     ;; ---- Getters ----
     (define/public (get-front-set)
       front-set)

@@ -17,6 +17,24 @@
            [known-mines (new queue-set%)]
            [knowledge (make-hash)])
 
+    (define out (open-output-file "debug.txt" #:exists 'truncate))
+
+    (define/public (print-info port)
+      (displayln "---------------------------------------" port)
+      (displayln "Made moves : " port)
+      (for ([pos (in-set made-moves)])
+        (display pos port)
+        (display " " port))
+      (displayln "" port)
+      (displayln "Known-safes : " port)
+      (send known-safes print port)
+      (displayln "Known-mines : " port)
+      (send known-mines print port)
+      (displayln "Knowledge : " port)
+      (for ([sent (in-hash-values knowledge)])
+        (send sent print port))
+      (displayln "" port))
+
     (define/public (set-size! size-arg)
       (set! size size-arg))
 
@@ -28,7 +46,9 @@
         (remove-filter-empty-sentence!)
         (conclude-new-knowledge!)
         (update-knowledge-loop!)
-        (remove-filter-empty-sentence!)))
+        (remove-filter-empty-sentence!)
+        (send grid print #f out)
+        (print-info out)))
 
     ;; ---- Private methods ----
 
@@ -45,19 +65,24 @@
     (define/private (mark-safe! pos)
       (send known-safes add-pos! pos #t)
       (for ([sentence (in-hash-values knowledge)])
-        (send sentence mark-safe! pos)))
+        (send sentence mark-safe! pos))
+      (send known-safes move-back!))
 
     ;; Adds a sentence% to knowledge.
-    ;; Complexity : constant
+    ;; Complexity : known-safes.back-set.size +
+    ;;              known-mines.back-set.size
     (define/private (add-sentence! pos count)
-      (hash-set! knowledge
-                 pos
-                 (make-object sentence% pos count size)))
+      (let ([sentence (make-object sentence% pos count size)])
+        (for ([safe-pos (in-set (send known-safes get-back-set))])
+          (send sentence mark-safe! safe-pos))
+        (for ([mine-pos (in-set (send known-mines get-back-set))])
+          (send sentence mark-mine! mine-pos))
+        (hash-set! knowledge pos sentence)))
 
     ;; Mark a 'pos' as a made move and a safe position then
     ;; add a sentence to knowledge based on 'pos'.
     ;; Complexity : knowledge.size
-    (define/private (mark-add-sentence! pos count)
+    (define/public (mark-add-sentence! pos count)
       (mark-move! pos)
       (mark-safe! pos)
       (add-sentence! pos count))
@@ -95,7 +120,7 @@
     ;; Collects and marks new safes and mines as long
     ;; as possible.
     ;; Complexity : at least 2 * knowledge.size
-    (define/private (update-knowledge-loop!)
+    (define/public (update-knowledge-loop!)
       (when (or (update-known-safes!) (update-known-mines!))
         (mark-safes-mines!)
         (update-knowledge-loop!)))
@@ -129,7 +154,7 @@
     ;; Removes all empty sentence's from knowledge
     ;; and updates all adjacent-sets in knowledge.
     ;; Complexity : knowledge.size * empty-set.size
-    (define/private (remove-filter-empty-sentence!)
+    (define/public (remove-filter-empty-sentence!)
       (let ([empty-set (collect-empty-sentence)])
         (remove-empty-sentence! empty-set)
         (remove-empty-adjacent! empty-set)))
@@ -139,7 +164,7 @@
     ;; Iterates knowledge and concludes new
     ;; sentences when possible using the subset-rule.
     ;; Complexity : at most 24 * knowledge.size
-    (define/private (conclude-new-knowledge!)
+    (define/public (conclude-new-knowledge!)
       (for ([sentence (in-hash-values knowledge)])
         (for ([pos (in-set (send sentence get-adjacent))]
               #:when (hash-ref knowledge pos #f))
@@ -151,7 +176,7 @@
     ;; Returns a safe position or #f if no such
     ;; move is available.
     ;; Complexity : at most known-safes.back-set.size
-    (define/private (make-safe-move)
+    (define/public (make-safe-move)
       (for/first ([safe-pos (in-set (send known-safes get-back-set))]
                   #:unless (set-member? made-moves safe-pos))
         safe-pos))
@@ -171,7 +196,7 @@
     ;; Returns a move from knowledge or #f
     ;; if no such move can be found.
     ;; Complexity : knowledge.size
-    (define/private (make-knowledge-move)
+    (define/public (make-knowledge-move)
       (let* ([key (get-max-key)]
              [sentence (hash-ref knowledge key #f)])
         (if sentence
@@ -180,7 +205,7 @@
 
     ;; Produce a random move not known to be
     ;; a mine.
-    (define/private (make-random-move)
+    (define/public (make-random-move)
       (let ([pos (cons (random (car size))
                        (random (cdr size)))])
         (if (or (set-member? made-moves pos)
@@ -191,13 +216,21 @@
     ;; Produces a move.
     ;; Complexity : at least known-safes.back-set.size +
     ;;                       knowledge.size
-    (define/private (produce-move)
+    (define/public (produce-move)
       (let ([safe-move (make-safe-move)]
             [knowledge-move (make-knowledge-move)])
+        (display "Move -> " out)
         (cond
-          (safe-move safe-move)
-          (knowledge-move knowledge-move)
+          (safe-move
+           (display "Safe " out)
+           (displayln safe-move out)
+           safe-move)
+          (knowledge-move
+           (display "Know " out)
+           (displayln knowledge-move out)
+           knowledge-move)
           (else
+           (displayln "Random" out)
            (make-random-move)))))
     
     (super-new)))

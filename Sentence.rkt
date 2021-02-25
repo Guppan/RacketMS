@@ -18,6 +18,23 @@
     (field [sentence (create-set 1)]
            [adjacent (create-set 2)])
 
+    (define/public (print port)
+      (display pos port)
+      (display " -> " port)
+      (display "{" port)
+      (for ([p (in-set sentence)])
+        (display "(" port)
+        (display (car p) port)
+        (display "," port)
+        (display (cdr p) port)
+        (display ")" port))
+      (display "}=" port)
+      (display count port)
+      (displayln "" port))
+
+    (define/public (get-count)
+      count)
+    
     ;; ---- Getters ----
     (define/public (empty?)
       (set-empty? sentence))
@@ -68,6 +85,7 @@
     (define/public (conclude-sentence! other)
       (when (is-subset? other)
         (subtract-sentence! other)
+        (subtract-count! other)
         (remove-adjacent! other #t)))
         
 
@@ -79,6 +97,10 @@
     (define/private (subtract-sentence! other)
       (set-subtract! sentence
                      (get-field sentence other)))
+
+    (define/private (subtract-count! other)
+      (set! count (- count
+                     (get-field count other))))
        
     (define/private (in-range? pos-arg)
       (and (and (>= (car pos-arg) 0)
