@@ -18,23 +18,6 @@
     (field [sentence (create-set 1)]
            [adjacent (create-set 2)])
 
-    (define/public (print port)
-      (display pos port)
-      (display " -> " port)
-      (display "{" port)
-      (for ([p (in-set sentence)])
-        (display "(" port)
-        (display (car p) port)
-        (display "," port)
-        (display (cdr p) port)
-        (display ")" port))
-      (display "}=" port)
-      (display count port)
-      (displayln "" port))
-
-    (define/public (get-count)
-      count)
-    
     ;; ---- Getters ----
     (define/public (empty?)
       (set-empty? sentence))

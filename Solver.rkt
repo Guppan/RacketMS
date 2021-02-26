@@ -17,23 +17,6 @@
            [known-mines (new queue-set%)]
            [knowledge (make-hash)])
 
-    (define out (open-output-file "debug.txt" #:exists 'truncate))
-
-    (define/public (print-info port)
-      (displayln "---------------------------------------" port)
-      (displayln "Made moves : " port)
-      (for ([pos (in-set made-moves)])
-        (display pos port)
-        (display " " port))
-      (displayln "" port)
-      (displayln "Known-safes : " port)
-      (send known-safes print port)
-      (displayln "Known-mines : " port)
-      (send known-mines print port)
-      (displayln "Knowledge : " port)
-      (for ([sent (in-hash-values knowledge)])
-        (send sent print port))
-      (displayln "" port))
 
     (define/public (set-size! size-arg)
       (set! size size-arg))
@@ -46,9 +29,7 @@
         (remove-filter-empty-sentence!)
         (conclude-new-knowledge!)
         (update-knowledge-loop!)
-        (remove-filter-empty-sentence!)
-        (send grid print #f out)
-        (print-info out)))
+        (remove-filter-empty-sentence!)))
 
     ;; ---- Private methods ----
 
@@ -231,18 +212,12 @@
     (define/public (produce-move)
       (let ([safe-move (make-safe-move)]
             [knowledge-move (make-knowledge-move)])
-        (display "Move -> " out)
         (cond
           (safe-move
-           (display "Safe " out)
-           (displayln safe-move out)
            safe-move)
           (knowledge-move
-           (display "Know " out)
-           (displayln knowledge-move out)
            knowledge-move)
           (else
-           (displayln "Random" out)
            (make-random-move)))))
     
     (super-new)))

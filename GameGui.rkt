@@ -101,7 +101,7 @@
            [handler mouse-handler]
            [paint-callback paint-procedure]))
 
-    ;; ---- Timers -----
+    ;; ---- Timers ----
     (define (update-game!)
       (send game-canvas refresh)
       (when ai-active?
@@ -113,5 +113,6 @@
     (define game-timer
       (new timer%
            [notify-callback update-game!]))
+
 
     (super-new)))
