@@ -1,2 +1,2 @@
 # RacketMS
-A minesweeper with an AI-solver.
+A minesweeper with a solver written in Racket.
